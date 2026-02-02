@@ -1,0 +1,34 @@
+{
+  "name": "mantra-backend",
+  "version": "1.0.0",
+  "description": "Mantra - Personalized Multi-Origin News Platform API",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "db:migrate": "npx prisma migrate dev",
+    "db:push": "npx prisma db push",
+    "db:generate": "npx prisma generate",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "npx prisma studio"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@prisma/client": "^5.20.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0",
+    "reading-time": "^1.5.0",
+    "slugify": "^1.6.6",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "prisma": "^5.20.0"
+  }
+}

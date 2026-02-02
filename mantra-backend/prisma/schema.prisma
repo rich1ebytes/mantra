@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USER MANAGEMENT ───
+
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  username    String    @unique
+  displayName String?
+  avatar      String?
+  bio         String?
+  role        Role      @default(READER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  articles     Article[]
+  bookmarks    Bookmark[]
+  comments     Comment[]
+  preferences  UserPreference?
+  chatSessions ChatSession[]
+  readHistory  ReadHistory[]
+}
+
+enum Role {
+  READER
+  WRITER
+  MODERATOR
+  ADMIN
+}
+
+model UserPreference {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredOrigins    String[]
+  preferredCategories String[]
+  interests           String[]
+  readingLevel        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ─── CONTENT ───
+
+model Origin {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  code        String    @unique
+  flag        String?
+  description String?
+  isActive    Boolean   @default(true)
+  articles    Article[]
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  icon        String?
+  articles    Article[]
+}
+
+model Article {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  summary     String
+  content     String
+  thumbnail   String?
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id])
+  originId    String
+  origin      Origin        @relation(fields: [originId], references: [id])
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+  tags        String[]
+  status      ArticleStatus @default(DRAFT)
+  viewsCount  Int           @default(0)
+  likesCount  Int           @default(0)
+  readingTime Int
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  bookmarks   Bookmark[]
+  comments    Comment[]
+  readHistory ReadHistory[]
+}
+
+enum ArticleStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  content   String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// ─── AI CHAT ───
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id                  String      @id @default(uuid())
+  sessionId           String
+  session             ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role                MessageRole
+  content             String
+  recommendedArticles String[]
+  createdAt           DateTime    @default(now())
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ─── ANALYTICS ───
+
+model ReadHistory {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId    String
+  article      Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  readDuration Int?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, articleId])
+}

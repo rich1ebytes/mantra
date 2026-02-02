@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-stone-50 text-ink-950 font-body antialiased;
+  }
+
+  ::selection {
+    @apply bg-mantra-200 text-mantra-900;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-400;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 
+           bg-mantra-600 text-white font-semibold rounded-lg
+           hover:bg-mantra-700 active:bg-mantra-800
+           transition-colors duration-150 text-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
+           bg-ink-100 text-ink-800 font-semibold rounded-lg
+           hover:bg-ink-200 active:bg-ink-300
+           transition-colors duration-150 text-sm;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2
+           text-ink-600 font-medium rounded-lg
+           hover:bg-ink-100 active:bg-ink-200
+           transition-colors duration-150 text-sm;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-white border border-ink-200 rounded-lg
+           text-ink-900 placeholder:text-ink-400
+           focus:outline-none focus:ring-2 focus:ring-mantra-500/30 focus:border-mantra-500
+           transition-all duration-150 text-sm;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-ink-100 
+           shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 
+           bg-ink-100 text-ink-700 text-xs font-medium rounded-full;
+  }
+
+  .badge-origin {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5
+           bg-mantra-50 text-mantra-700 text-xs font-semibold rounded-full
+           border border-mantra-200;
+  }
+}
+
+/* Prose for article content */
+.prose-article h1 { @apply text-3xl font-display font-bold mb-4 mt-8; }
+.prose-article h2 { @apply text-2xl font-display font-bold mb-3 mt-6; }
+.prose-article h3 { @apply text-xl font-display font-semibold mb-2 mt-5; }
+.prose-article p { @apply mb-4 leading-relaxed text-ink-800; }
+.prose-article ul { @apply list-disc pl-6 mb-4 space-y-1; }
+.prose-article ol { @apply list-decimal pl-6 mb-4 space-y-1; }
+.prose-article blockquote {
+  @apply border-l-4 border-mantra-400 pl-4 italic text-ink-600 my-4;
+}
+.prose-article a { @apply text-mantra-600 underline hover:text-mantra-700; }
+.prose-article img { @apply rounded-lg my-6; }

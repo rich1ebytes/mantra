@@ -1,0 +1,33 @@
+export const ROLES = {
+  READER: "READER",
+  WRITER: "WRITER",
+  MODERATOR: "MODERATOR",
+  ADMIN: "ADMIN",
+};
+
+export const ARTICLE_STATUS = {
+  DRAFT: "DRAFT",
+  PENDING: "PENDING",
+  PUBLISHED: "PUBLISHED",
+  REJECTED: "REJECTED",
+  ARCHIVED: "ARCHIVED",
+};
+
+export const MESSAGE_ROLES = {
+  USER: "USER",
+  ASSISTANT: "ASSISTANT",
+  SYSTEM: "SYSTEM",
+};
+
+export const PAGINATION = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_LIMIT: 20,
+  MAX_LIMIT: 100,
+};
+
+export const RATE_LIMITS = {
+  CHAT_WINDOW_MS: 60 * 1000,      // 1 minute
+  CHAT_MAX_REQUESTS: 15,           // 15 messages per minute
+  GLOBAL_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  GLOBAL_MAX_REQUESTS: 200,
+};
