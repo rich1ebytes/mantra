@@ -88,9 +88,3 @@ src/
 └── utils/                    # Helpers, prompts, constants
 ```
 
-## Authors
-
-- Richard Gomes
-- Mohammed Anas Irfan
-
-Guide: Jalaj Pandey
