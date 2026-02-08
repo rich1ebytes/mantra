@@ -15,6 +15,8 @@ import ChatWidget from "./components/chat/ChatWidget.jsx";
 import SeederPage from "./pages/SeederPage.jsx";
 import DraftsPage from "./pages/DraftsPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="/drafts" element={<ProtectedRoute><DraftsPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/user/:username" element={<ProfilePage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+<Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/seed" element={<SeederPage />} />
         </Routes>
       </main>
