@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createArticleSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters").max(200),
   summary: z.string().min(10, "Summary must be at least 10 characters").max(500),
-  content: z.string().min(50, "Article content must be at least 50 characters"),
+  content: z.string().min(20, "Article content must be at least 20 characters"),
   thumbnail: z.string().url().optional().nullable(),
   originId: z.string().uuid("Invalid origin ID"),
   categoryId: z.string().uuid("Invalid category ID"),
@@ -14,7 +14,7 @@ export const createArticleSchema = z.object({
 export const updateArticleSchema = z.object({
   title: z.string().min(5).max(200).optional(),
   summary: z.string().min(10).max(500).optional(),
-  content: z.string().min(50).optional(),
+  content: z.string().min(20).optional(),
   thumbnail: z.string().url().optional().nullable(),
   originId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),

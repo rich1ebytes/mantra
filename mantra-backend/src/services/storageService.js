@@ -54,3 +54,4 @@ function getMimeType(ext) {
   };
   return types[ext.toLowerCase()] || "application/octet-stream";
 }
+

@@ -5,8 +5,8 @@ import { ApiError } from "../utils/ApiError.js";
 export async function getAll(req, res, next) {
   try {
     const { skip, take } = paginate(req.query.page, req.query.limit);
-    const { originId, categoryId } = req.query;
-    const result = await articleService.getAll({ originId, categoryId, skip, take });
+    const { originId, categoryId, status } = req.query;
+    const result = await articleService.getAll({ originId, categoryId, status, skip, take });
     res.json(result);
   } catch (err) {
     next(err);
@@ -57,7 +57,6 @@ export async function create(req, res, next) {
 
 export async function update(req, res, next) {
   try {
-    // Verify ownership
     const existing = await articleService.getById(req.params.id);
     if (!existing) throw ApiError.notFound("Article not found");
     if (existing.authorId !== req.userId) throw ApiError.forbidden("You can only edit your own articles");
@@ -100,6 +99,15 @@ export async function getPending(req, res, next) {
   try {
     const { skip, take } = paginate(req.query.page, req.query.limit);
     const articles = await articleService.getPending({ skip, take });
+    res.json(articles);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getMyDrafts(req, res, next) {
+  try {
+    const articles = await articleService.getByAuthor(req.userId);
     res.json(articles);
   } catch (err) {
     next(err);

@@ -1,4 +1,4 @@
-import { geminiModel, geminiFlash } from "../config/gemini.js";
+import groq, { PRIMARY_MODEL, FAST_MODEL } from "../config/groq.js";
 import {
   SYSTEM_PROMPT,
   BRIEFING_PROMPT,
@@ -13,13 +13,20 @@ class AIService {
   async chat(userMessage, conversationHistory = [], userContext = {}) {
     const systemPrompt = this._buildSystemPrompt(userContext);
 
-    const chat = geminiModel.startChat({
-      history: this._formatHistory(conversationHistory),
-      systemInstruction: systemPrompt,
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...this._formatHistory(conversationHistory),
+      { role: "user", content: userMessage },
+    ];
+
+    const response = await groq.chat.completions.create({
+      model: PRIMARY_MODEL,
+      messages,
+      temperature: 0.7,
+      max_tokens: 1024,
     });
 
-    const result = await chat.sendMessage(userMessage);
-    return result.response.text();
+    return response.choices[0]?.message?.content || "";
   }
 
   /**
@@ -28,15 +35,22 @@ class AIService {
   async *streamChat(userMessage, conversationHistory = [], userContext = {}) {
     const systemPrompt = this._buildSystemPrompt(userContext);
 
-    const chat = geminiModel.startChat({
-      history: this._formatHistory(conversationHistory),
-      systemInstruction: systemPrompt,
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...this._formatHistory(conversationHistory),
+      { role: "user", content: userMessage },
+    ];
+
+    const stream = await groq.chat.completions.create({
+      model: PRIMARY_MODEL,
+      messages,
+      temperature: 0.7,
+      max_tokens: 1024,
+      stream: true,
     });
 
-    const result = await chat.sendMessageStream(userMessage);
-
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
+    for await (const chunk of stream) {
+      const text = chunk.choices[0]?.delta?.content;
       if (text) yield text;
     }
   }
@@ -45,9 +59,17 @@ class AIService {
    * Summarize an article
    */
   async summarizeArticle(articleContent, title) {
-    const prompt = `${SUMMARIZE_PROMPT}\n\nTitle: ${title}\nContent: ${articleContent}`;
-    const result = await geminiFlash.generateContent(prompt);
-    return result.response.text();
+    const response = await groq.chat.completions.create({
+      model: FAST_MODEL,
+      messages: [
+        { role: "system", content: SUMMARIZE_PROMPT },
+        { role: "user", content: `Title: ${title}\nContent: ${articleContent}` },
+      ],
+      temperature: 0.3,
+      max_tokens: 300,
+    });
+
+    return response.choices[0]?.message?.content || "";
   }
 
   /**
@@ -63,8 +85,14 @@ Preferred categories: ${userPreferences.preferredCategories?.join(", ") || "all"
 Today's top articles:
 ${topArticles.map((a, i) => `${i + 1}. [${a.origin?.name || "Unknown"}] ${a.title} — ${a.summary}`).join("\n")}`;
 
-    const result = await geminiModel.generateContent(prompt);
-    return result.response.text();
+    const response = await groq.chat.completions.create({
+      model: PRIMARY_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 512,
+    });
+
+    return response.choices[0]?.message?.content || "";
   }
 
   /**
@@ -85,10 +113,16 @@ Candidate Articles: ${JSON.stringify(
       }))
     )}`;
 
-    const result = await geminiModel.generateContent(prompt);
-    const text = result.response.text();
+    const response = await groq.chat.completions.create({
+      model: PRIMARY_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+      max_tokens: 512,
+    });
 
-    // Parse JSON response from Gemini
+    const text = response.choices[0]?.message?.content || "";
+
+    // Parse JSON response
     try {
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
@@ -112,8 +146,8 @@ Candidate Articles: ${JSON.stringify(
     return history
       .filter((msg) => msg.role === "USER" || msg.role === "ASSISTANT")
       .map((msg) => ({
-        role: msg.role === "ASSISTANT" ? "model" : "user",
-        parts: [{ text: msg.content }],
+        role: msg.role === "ASSISTANT" ? "assistant" : "user",
+        content: msg.content,
       }));
   }
 }

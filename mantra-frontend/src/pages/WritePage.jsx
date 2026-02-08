@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Save, ArrowLeft } from "lucide-react";
+import { Send, Save, ArrowLeft, AlertCircle } from "lucide-react";
 import { articleAPI } from "../services/articleService";
 import { useOrigins, useCategories } from "../hooks/useData";
 
@@ -21,7 +21,10 @@ export default function WritePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+  const update = (field) => (e) => {
+    setForm({ ...form, [field]: e.target.value });
+    setError("");
+  };
 
   const handleSubmit = async (status = "DRAFT") => {
     setError("");
@@ -39,8 +42,15 @@ export default function WritePage() {
         thumbnail: form.thumbnail || null,
         status,
       };
-      const { data } = await articleAPI.create(payload);
-      navigate(`/article/${data.slug}`);
+      await articleAPI.create(payload);
+
+      if (status === "DRAFT") {
+        alert("✅ Draft saved successfully!");
+        navigate("/drafts");
+      } else {
+        alert("✅ Article submitted for review!");
+        navigate("/");
+      }
     } catch (err) {
       setError(err.response?.data?.error || "Failed to create article.");
     } finally {
@@ -50,14 +60,15 @@ export default function WritePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-mantra-600 mb-6">
+      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-ink-500 hover:text-mantra-600 mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back
       </button>
 
       <h1 className="font-display text-3xl font-bold text-ink-950 mb-8">Write an Article</h1>
 
       {error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-6">
+        <div className="flex items-start gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-6">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           {error}
         </div>
       )}
@@ -98,9 +109,12 @@ export default function WritePage() {
 
         <div>
           <label className="block text-sm font-medium text-ink-700 mb-1">Content *</label>
+          <p className="text-xs text-ink-400 mb-2">
+            Write your article below. HTML tags like &lt;p&gt;, &lt;h2&gt;, &lt;blockquote&gt;, &lt;ul&gt; are supported.
+          </p>
           <textarea value={form.content} onChange={update("content")}
             className="input-field h-64 resize-y font-mono text-sm"
-            placeholder="Write your article content here... (HTML supported)" />
+            placeholder="<p>Write your article content here...</p>" />
         </div>
 
         <div>

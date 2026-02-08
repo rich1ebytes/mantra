@@ -1,7 +1,53 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Plus, Trash2, MessageSquare } from "lucide-react";
-import { chatAPI, streamMessage } from "../services/chatService";
+import { Send, Sparkles, Plus, Trash2, MessageSquare, Newspaper, ExternalLink } from "lucide-react";
+import { chatAPI } from "../services/chatService";
 import ReactMarkdown from "react-markdown";
+import { Link } from "react-router-dom";
+
+function ArticleCards({ articles }) {
+  if (!articles || articles.length === 0) return null;
+
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-xs font-medium text-ink-500 uppercase tracking-wide">Related Articles</p>
+      <div className="grid gap-2">
+        {articles.map((article) => (
+          <Link
+            key={article.id}
+            to={`/article/${article.slug || article.id}`}
+            className="flex items-start gap-3 p-3 bg-white border border-ink-100 rounded-lg 
+                       hover:border-mantra-300 hover:shadow-sm transition-all group"
+          >
+            {article.thumbnail && (
+              <img
+                src={article.thumbnail}
+                alt=""
+                className="w-16 h-16 rounded-lg object-cover shrink-0"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-medium text-ink-900 line-clamp-2 group-hover:text-mantra-700 transition-colors">
+                {article.title}
+              </h4>
+              <div className="flex items-center gap-2 mt-1">
+                {article.origin?.name && (
+                  <span className="text-xs text-ink-400">{article.origin.name}</span>
+                )}
+                {article.category?.name && (
+                  <>
+                    <span className="text-ink-200">·</span>
+                    <span className="text-xs text-ink-400">{article.category.name}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <ExternalLink className="w-4 h-4 text-ink-300 shrink-0 mt-1 group-hover:text-mantra-500" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const [sessions, setSessions] = useState([]);
@@ -9,27 +55,36 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Load sessions
   useEffect(() => {
-    chatAPI.getSessions().then(({ data }) => setSessions(data)).catch(() => {});
+    chatAPI.getSessions().then(({ data }) => setSessions(data)).catch(() => { });
   }, []);
 
   // Load messages when session changes
   useEffect(() => {
     if (activeSessionId) {
       chatAPI.getSession(activeSessionId)
-        .then(({ data }) => setMessages(data.messages || []))
-        .catch(() => {});
+        .then(({ data }) => setMessages(
+          (data.messages || []).map((m) => ({
+            role: m.role,
+            content: m.content,
+            articles: [],
+          }))
+        ))
+        .catch(() => { });
     } else {
       setMessages([]);
     }
   }, [activeSessionId]);
 
+  // Scroll only the chat container, not the page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length > 0 && messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages.length]);
 
   const createSession = async () => {
     try {
@@ -37,7 +92,10 @@ export default function ChatPage() {
       setSessions((prev) => [data, ...prev]);
       setActiveSessionId(data.id);
       setMessages([]);
-    } catch {}
+      return data.id;
+    } catch {
+      return null;
+    }
   };
 
   const deleteSession = async (id) => {
@@ -48,46 +106,48 @@ export default function ChatPage() {
         setActiveSessionId(null);
         setMessages([]);
       }
-    } catch {}
+    } catch { }
   };
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
-    if (!activeSessionId) await createSession();
+
+    let sid = activeSessionId;
+    if (!sid) {
+      sid = await createSession();
+      if (!sid) return;
+    }
 
     const userMsg = input.trim();
     setInput("");
-    setMessages((prev) => [...prev, { role: "USER", content: userMsg }]);
+    setMessages((prev) => [...prev, { role: "USER", content: userMsg, articles: [] }]);
     setLoading(true);
 
-    setMessages((prev) => [...prev, { role: "ASSISTANT", content: "" }]);
+    try {
+      const { data } = await chatAPI.sendMessage(sid, userMsg);
 
-    const sid = activeSessionId || sessions[0]?.id;
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ASSISTANT",
+          content: data.message,
+          articles: data.articles || [],
+        },
+      ]);
 
-    await streamMessage(sid, userMsg, {
-      onChunk: (chunk) => {
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          if (last.role === "ASSISTANT") last.content += chunk;
-          return [...updated];
-        });
-      },
-      onArticles: () => {},
-      onDone: () => {
-        setLoading(false);
-        // Refresh sessions list for updated titles
-        chatAPI.getSessions().then(({ data }) => setSessions(data)).catch(() => {});
-      },
-      onError: (err) => {
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1].content = `Error: ${err}`;
-          return [...updated];
-        });
-        setLoading(false);
-      },
-    });
+      chatAPI.getSessions().then(({ data }) => setSessions(data)).catch(() => { });
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ASSISTANT",
+          content: `Sorry, something went wrong. Please try again.`,
+          articles: [],
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const suggestions = [
@@ -138,11 +198,11 @@ export default function ChatPage() {
           <div className="flex items-center gap-2 px-5 py-3 border-b border-ink-100">
             <Sparkles className="w-5 h-5 text-mantra-600" />
             <h2 className="font-semibold text-ink-900">Mantra AI</h2>
-            <span className="text-xs text-ink-400 ml-auto">Powered by Gemini</span>
+            <span className="text-xs text-ink-400 ml-auto">Powered by Groq</span>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-5 space-y-4">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="w-16 h-16 bg-mantra-100 rounded-2xl flex items-center justify-center mb-4">
@@ -171,34 +231,39 @@ export default function ChatPage() {
 
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "USER" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed
-                  ${msg.role === "USER"
-                    ? "bg-mantra-600 text-white rounded-br-md"
-                    : "bg-ink-50 text-ink-800 rounded-bl-md"}`}
-                >
-                  {msg.role === "ASSISTANT" ? (
-                    <div className="prose-sm">
-                      <ReactMarkdown>{msg.content || "Thinking..."}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    msg.content
-                  )}
+                <div className={`max-w-[75%] ${msg.role === "USER" ? "" : "w-full max-w-[75%]"}`}>
+                  <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed
+                    ${msg.role === "USER"
+                      ? "bg-mantra-600 text-white rounded-br-md"
+                      : "bg-ink-50 text-ink-800 rounded-bl-md"}`}
+                  >
+                    {msg.role === "ASSISTANT" ? (
+                      <div className="prose-sm prose-ink max-w-none">
+                        <ReactMarkdown>{msg.content || "Thinking..."}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                  {msg.role === "ASSISTANT" && <ArticleCards articles={msg.articles} />}
                 </div>
               </div>
             ))}
 
-            {loading && messages[messages.length - 1]?.content === "" && (
+            {loading && (
               <div className="flex justify-start">
                 <div className="bg-ink-50 px-4 py-3 rounded-2xl rounded-bl-md">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-ink-300 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-ink-300 rounded-full animate-bounce [animation-delay:0.15s]" />
-                    <div className="w-2 h-2 bg-ink-300 rounded-full animate-bounce [animation-delay:0.3s]" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 bg-ink-300 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-ink-300 rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <div className="w-2 h-2 bg-ink-300 rounded-full animate-bounce [animation-delay:0.3s]" />
+                    </div>
+                    <span className="text-xs text-ink-400">Searching articles...</span>
                   </div>
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}

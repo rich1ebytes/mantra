@@ -12,6 +12,9 @@ import BookmarksPage from "./pages/BookmarksPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
 import ChatWidget from "./components/chat/ChatWidget.jsx";
+import SeederPage from "./pages/SeederPage.jsx";
+import DraftsPage from "./pages/DraftsPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 
 export default function App() {
   return (
@@ -28,7 +31,10 @@ export default function App() {
           <Route path="/bookmarks" element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/drafts" element={<ProtectedRoute><DraftsPage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
           <Route path="/user/:username" element={<ProfilePage />} />
+          <Route path="/seed" element={<SeederPage />} />
         </Routes>
       </main>
       <Footer />

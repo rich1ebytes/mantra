@@ -1,7 +1,8 @@
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = "http://127.0.0.1:3000/api";
 let USER_ID = "3f908ade-3582-485d-be13-ec8d42290ccc"; // From previous step
 let ARTICLE_ID = "";
 let SESSION_ID = "";
+let TOKEN = "";
 
 const colors = {
     green: "\x1b[32m",
@@ -18,12 +19,9 @@ function log(type, msg) {
     if (type === "warn") console.log(`${colors.yellow}⚠ ${msg}${colors.reset}`);
 }
 
-async function request(method, endpoint, body = null) {
-    const headers = {
-        "Content-Type": "application/json",
-        "x-test-bypass": "mantra-secret-bypass",
-        "x-test-user-id": USER_ID
-    };
+async function request(method, endpoint, body = null, token = null) {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     try {
         const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -60,10 +58,26 @@ async function runTests() {
         log("warn", `API check returned status ${healthRes.status}`);
     }
 
-    // Skipped Register/Login (Bypass)
+    // 1. Login with Persistent Test User
+    log("info", "Logging in with 'test@mantra.com'...");
+    const loginRes = await request("POST", "/auth/login", {
+        email: "test@mantra.com",
+        password: "Password123!"
+    });
 
-    // 3. Get Me
-    const meRes = await request("GET", "/users/me");
+    if (loginRes.status === 200 && loginRes.data.session) {
+        TOKEN = loginRes.data.session.access_token;
+        USER_ID = loginRes.data.user.id;
+        log("success", "Login successful");
+    } else {
+        log("error", `Login failed: ${JSON.stringify(loginRes.data)}`);
+        log("info", "Make sure you ran 'node scripts/setup-user.js' first!");
+        process.exit(1);
+    }
+
+    // 2. Get Me
+    // 2. Get Me
+    const meRes = await request("GET", "/users/me", null, TOKEN);
     if (meRes.status === 200) {
         log("success", "Fetched User Profile");
     } else {
@@ -75,7 +89,7 @@ async function runTests() {
     const hugeArray = Array(60).fill("test");
     const prefRes = await request("PUT", "/users/me/preferences", {
         interests: hugeArray
-    });
+    }, TOKEN);
 
     if (prefRes.status === 400) {
         log("success", "Correctly rejected oversized array (Validation Fix Working)");
@@ -85,7 +99,7 @@ async function runTests() {
 
     const validPrefRes = await request("PUT", "/users/me/preferences", {
         interests: ["Tech", "Science"]
-    });
+    }, TOKEN);
     if (validPrefRes.status === 200) {
         log("success", "Updated valid preferences");
     }
@@ -98,7 +112,7 @@ async function runTests() {
         content: "This is the content of the test article. It needs to be long enough.",
         originId: "00000000-0000-0000-0000-000000000000", // Needs valid UUID... this might fail if FK constraints exist
         categoryId: "00000000-0000-0000-0000-000000000000" // Needs valid UUID
-    });
+    }, TOKEN);
 
     // Note: originId and categoryId likely need to be real DB IDs.
     // We should fetch them first.
@@ -121,7 +135,7 @@ async function runTests() {
             originId,
             categoryId,
             status: "DRAFT"
-        });
+        }, TOKEN);
 
         if (validArticleRes.status === 201) {
             log("success", "Created Draft Article");
@@ -142,7 +156,7 @@ async function runTests() {
 
     // 7. Test Chat Session Ownership (Security Fix)
     log("info", "Testing Chat/Session Security...");
-    const sessionRes = await request("POST", "/chat/sessions", { title: "Test Session" });
+    const sessionRes = await request("POST", "/chat/sessions", { title: "Test Session" }, TOKEN);
 
     if (sessionRes.status === 201) {
         log("success", "Created Chat Session");
@@ -151,7 +165,7 @@ async function runTests() {
         // Try to access this session with a DIFFERENT user (simulated by no token or different logic, 
         // but hard to simulate specific different user without relogging. 
         // Instead, we verify we CAN access it with OUR token, passing userId check implicitly)
-        const getSession = await request("GET", `/chat/sessions/${SESSION_ID}`, null);
+        const getSession = await request("GET", `/chat/sessions/${SESSION_ID}`, null, TOKEN);
         if (getSession.status === 200) {
             log("success", "Accessed own session successfully");
         } else {

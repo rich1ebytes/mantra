@@ -9,12 +9,15 @@ export function AuthProvider({ children }) {
   );
   const [loading, setLoading] = useState(true);
 
-  // Check session on mount
+  // Check session on mount — always sync user from API
   useEffect(() => {
     const session = localStorage.getItem("mantra_session");
     if (session) {
       authAPI.getMe()
-        .then(({ data }) => setUser(data))
+        .then(({ data }) => {
+          setUser(data);
+          localStorage.setItem("mantra_user", JSON.stringify(data));
+        })
         .catch(() => {
           localStorage.removeItem("mantra_session");
           localStorage.removeItem("mantra_user");

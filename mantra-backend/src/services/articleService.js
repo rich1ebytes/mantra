@@ -182,24 +182,54 @@ export async function getPending({ skip = 0, take = 20 } = {}) {
 
 /**
  * Search articles for AI context building — returns slim results
+ * Falls back to latest articles if no keyword match
  */
 export async function searchForContext(query, limit = 5) {
-  return prisma.article.findMany({
+  const contextSelect = {
+    id: true,
+    title: true,
+    slug: true,
+    summary: true,
+    thumbnail: true,
+    origin: { select: { name: true } },
+    category: { select: { name: true } },
+  };
+
+  // Try keyword match first
+  const matched = await prisma.article.findMany({
     where: {
       status: "PUBLISHED",
       OR: [
         { title: { contains: query, mode: "insensitive" } },
         { summary: { contains: query, mode: "insensitive" } },
+        { tags: { hasSome: query.toLowerCase().split(" ") } },
       ],
     },
-    select: {
-      id: true,
-      title: true,
-      summary: true,
-      origin: { select: { name: true } },
-      category: { select: { name: true } },
-    },
+    select: contextSelect,
     orderBy: { publishedAt: "desc" },
     take: limit,
+  });
+
+  // If no keyword match, return latest published articles
+  if (matched.length === 0) {
+    return prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      select: contextSelect,
+      orderBy: { publishedAt: "desc" },
+      take: limit,
+    });
+  }
+
+  return matched;
+}
+
+export async function getByAuthor(authorId) {
+  return prisma.article.findMany({
+    where: {
+      authorId,
+      status: { in: ["DRAFT", "PENDING", "REJECTED"] },
+    },
+    include: ARTICLE_INCLUDE,
+    orderBy: { updatedAt: "desc" },
   });
 }

@@ -13,12 +13,15 @@ export const env = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   DATABASE_URL: process.env.DATABASE_URL,
 
-  // Google Gemini
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  // Groq AI
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
+
+  // GNews API (free: 100 req/day)
+  GNEWS_API_KEY: process.env.GNEWS_API_KEY,
 };
 
 // Validate required vars on startup
-const required = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "DATABASE_URL", "GEMINI_API_KEY"];
+const required = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "DATABASE_URL", "GROQ_API_KEY", "GNEWS_API_KEY"];
 for (const key of required) {
   if (!env[key]) {
     console.error(`❌ Missing required environment variable: ${key}`);

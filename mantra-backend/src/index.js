@@ -6,6 +6,8 @@ import { corsOptions } from "./config/cors.js";
 import { env } from "./config/env.js";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import newsRoutes from "./routes/newsRoutes.js";
+import { startNewsCron } from "./jobs/newsCron.js";
 
 const app = express();
 
@@ -15,13 +17,20 @@ app.use(cors(corsOptions));
 app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 
+
 // ── API Routes ──
 app.use("/api", routes);
+app.use("/api/news", newsRoutes);
+
+
 
 // ── Health Check ──
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+startNewsCron(12);
+
 
 // ── 404 Handler ──
 app.use((_req, res) => {
