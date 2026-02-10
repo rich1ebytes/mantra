@@ -10,6 +10,8 @@ router.post("/login", validate(loginSchema), auth.login);
 router.post("/logout", auth.logout);
 router.post("/refresh", auth.refreshToken);
 router.post("/forgot-password", auth.forgotPassword);
-router.post("/reset-password", auth.resetPassword);
+
+// REMOVED: router.post("/reset-password", auth.resetPassword)
+// Password reset is handled on the frontend via Supabase client SDK
 
 export default router;

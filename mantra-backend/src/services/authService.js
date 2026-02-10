@@ -70,20 +70,15 @@ export async function refreshSession(refreshToken) {
 
 /**
  * Send password reset email
+ * CHANGED: use supabaseAdmin instead of supabase so it works server-side without a session
  */
 export async function forgotPassword(email, redirectTo) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
     redirectTo,
   });
   if (error) throw error;
 }
 
-/**
- * Update password (user must be authenticated)
- */
-export async function resetPassword(newPassword) {
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword,
-  });
-  if (error) throw error;
-}
+// REMOVED: resetPassword() — the server has no session context so updateUser() can't know
+// which user to update. The frontend ResetPasswordPage handles this correctly via the
+// client-side Supabase SDK using the token from the email link.

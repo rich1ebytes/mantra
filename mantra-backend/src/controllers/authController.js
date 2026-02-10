@@ -48,11 +48,4 @@ export async function forgotPassword(req, res, next) {
   }
 }
 
-export async function resetPassword(req, res, next) {
-  try {
-    await authService.resetPassword(req.body.newPassword);
-    res.json({ message: "Password updated" });
-  } catch (err) {
-    next(err);
-  }
-}
+// REMOVED: resetPassword — handled entirely on the frontend via Supabase client SDK

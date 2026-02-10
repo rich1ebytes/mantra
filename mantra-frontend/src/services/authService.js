@@ -6,5 +6,5 @@ export const authAPI = {
   logout: () => api.post("/auth/logout"),
   getMe: () => api.get("/users/me"),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
-  resetPassword: (newPassword) => api.post("/auth/reset-password", { newPassword }),
+  // REMOVED: resetPassword — frontend ResetPasswordPage calls supabase.auth.updateUser() directly
 };
