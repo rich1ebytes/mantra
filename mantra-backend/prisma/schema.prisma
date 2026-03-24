@@ -76,6 +76,7 @@ model Article {
   summary     String
   content     String
   thumbnail   String?
+  sourceUrl   String?       @unique
   authorId    String
   author      User          @relation(fields: [authorId], references: [id])
   originId    String

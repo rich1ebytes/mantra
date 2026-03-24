@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion, useScroll, useSpring } from "framer-motion";
+import DOMPurify from "dompurify";
 import { Clock, Eye, Bookmark, BookmarkCheck, ArrowLeft, Share2 } from "lucide-react";
 import { useArticle } from "../hooks/useData";
 import { useAuth } from "../context/AuthContext";
@@ -165,7 +166,7 @@ export default function ArticlePage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
           className="prose-article"
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
         />
 
         {/* Tags */}

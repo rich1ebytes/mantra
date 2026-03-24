@@ -4,9 +4,14 @@ import { authAPI } from "../services/authService";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() =>
-    JSON.parse(localStorage.getItem("mantra_user") || "null")
-  );
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("mantra_user") || "null");
+    } catch {
+      localStorage.removeItem("mantra_user");
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   // Check session on mount — always sync user from API

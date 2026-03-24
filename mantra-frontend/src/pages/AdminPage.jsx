@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { CheckCircle, XCircle, Clock, AlertCircle, Shield, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -73,7 +74,7 @@ function ArticleCard({ article, onApprove, onReject, actionLoading }) {
         <div className="px-4 pb-4">
           <div
             className="prose-sm max-h-60 overflow-y-auto bg-ink-50 rounded-lg p-3 border border-ink-100 text-sm"
-            dangerouslySetInnerHTML={{ __html: article.content || "<p>No content</p>" }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content || "<p>No content</p>") }}
           />
           {article.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
